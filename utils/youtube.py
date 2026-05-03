@@ -48,9 +48,6 @@ _BASE_YDL_OPTS: dict = {
         }
     },
 
-    # ── IPv4 forcing: prevent IPv6 blackholes on cloud providers ──
-    "source_address": "0.0.0.0",
-
     # ── Realistic User-Agent ──
     "headers": {
         "User-Agent": (
