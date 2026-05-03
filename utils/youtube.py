@@ -18,6 +18,7 @@ import tempfile
 import uuid
 
 import yt_dlp
+from duckduckgo_search import DDGS
 
 log = logging.getLogger(__name__)
 
@@ -48,8 +49,7 @@ _BASE_YDL_OPTS: dict = {
         }
     },
 
-    # ── Realistic User-Agent & TLS Impersonation ──
-    "impersonate": "chrome",
+    # ── Realistic User-Agent ──
     "headers": {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -112,8 +112,18 @@ class YouTubeExtractor:
         # 1. Resolve query → URL
         original_query = url_or_query
         if not cls._is_url(url_or_query):
-            # Bypass third-party search and use yt-dlp's native YouTube search
-            url_or_query = f"ytsearch1:{url_or_query}"
+            # Bypass third-party search and use DuckDuckGo to avoid YouTube SSL blocks
+            def _ddg_search():
+                try:
+                    res = DDGS().text(f"site:youtube.com {original_query}", max_results=1)
+                    if res:
+                        return res[0]["href"]
+                except Exception as e:
+                    log.error("DDG search error: %s", e)
+                return None
+            
+            found_url = await loop.run_in_executor(None, _ddg_search)
+            url_or_query = found_url if found_url else f"ytsearch1:{url_or_query}"
 
         # 2. Try YouTube download
         result = await loop.run_in_executor(None, _download, url_or_query, video)
