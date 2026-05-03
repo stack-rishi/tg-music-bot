@@ -1,3 +1,13 @@
+---
+title: Telegram Music Bot
+emoji: 🎵
+colorFrom: purple
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 🎵 Telegram VC Music Bot
 
 A production-ready Telegram voice chat music & video player bot built with **Pyrogram** + **py-tgcalls** + **yt-dlp**.
