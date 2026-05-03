@@ -35,19 +35,21 @@ _BASE_YDL_OPTS: dict = {
     "noplaylist": True,
     "geo_bypass": True,
 
-    # ── Client spoofing: bypass SABR streaming blocks ──
-    # mweb bypasses SABR *and* supports cookies (unlike ios client)
-    # tv is a secondary fallback client
+    # ── Client order matters:
+    #   tv        — no PO token required, works on datacenter IPs ✅
+    #   web_embedded — no PO token required, good fallback ✅
+    #   mweb      — supports cookies but may need PO tokens on bad IPs
+    # Putting tv first gives best results on Hugging Face / cloud IPs.
     "extractor_args": {
         "youtube": {
-            "player_client": ["mweb", "tv"],
+            "player_client": ["tv", "web_embedded", "mweb"],
         },
     },
 
     # ── IPv4 forcing: prevent IPv6 blackholes on cloud providers ──
     "source_address": "0.0.0.0",
 
-    # ── Realistic User-Agent matching mweb client ──
+    # ── Realistic User-Agent ──
     "headers": {
         "User-Agent": (
             "Mozilla/5.0 (Linux; Android 13; Pixel 7) "
@@ -55,6 +57,9 @@ _BASE_YDL_OPTS: dict = {
             "Chrome/120.0.0.0 Mobile Safari/537.36"
         ),
     },
+
+    # ── Skip certificate issues on restrictive cloud networks ──
+    "nocheckcertificate": True,
 
     # ── Retry resilience ──
     "fragment_retries": 10,
