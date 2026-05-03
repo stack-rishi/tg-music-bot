@@ -4,5 +4,6 @@ py-tgcalls[pyrogram]==2.2.11
 https://github.com/yt-dlp/yt-dlp/archive/master.tar.gz
 bgutil-ytdlp-pot-provider
 aiohttp
+curl_cffi
 python-dotenv
 aiofiles
