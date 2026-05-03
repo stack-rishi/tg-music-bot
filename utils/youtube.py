@@ -120,14 +120,6 @@ class YouTubeExtractor:
         # 2. Try YouTube download
         result = await loop.run_in_executor(None, _download, url_or_query, video)
 
-        # 3. SoundCloud fallback if YouTube failed
-        if result is None and not cls._is_url(original_query):
-            log.warning("YouTube failed for %r — trying SoundCloud fallback", original_query)
-            sc_query = f"scsearch1:{original_query}"
-            result = await loop.run_in_executor(None, _download, sc_query, video)
-            if result:
-                log.info("SoundCloud fallback succeeded for %r", original_query)
-
         return result
 
 
