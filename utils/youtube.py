@@ -18,7 +18,6 @@ import tempfile
 import uuid
 
 import yt_dlp
-from duckduckgo_search import DDGS
 
 log = logging.getLogger(__name__)
 
@@ -36,18 +35,18 @@ _BASE_YDL_OPTS: dict = {
     "geo_bypass": True,
 
     # ── Client order matters:
-    #   tv        — no PO token required, works on datacenter IPs ✅
-    #   web_embedded — no PO token required, good fallback ✅
-    #   mweb      — supports cookies but may need PO tokens on bad IPs
-    # Putting tv first gives best results on Hugging Face / cloud IPs.
+    # Putting mweb first as per LyriFusion architecture to support cookies
     "extractor_args": {
         "youtube": {
-            "player_client": ["tv", "web_embedded", "mweb"],
+            "player_client": ["mweb", "tv"],
         },
         "youtubepot-bgutilhttp": {
             "base_url": ["http://127.0.0.1:4416"]
         }
     },
+
+    # ── IPv4 forcing: prevent IPv6 blackholes on cloud providers ──
+    "source_address": "0.0.0.0",
 
     # ── Realistic User-Agent ──
     "headers": {
@@ -112,18 +111,8 @@ class YouTubeExtractor:
         # 1. Resolve query → URL
         original_query = url_or_query
         if not cls._is_url(url_or_query):
-            # Bypass third-party search and use DuckDuckGo to avoid YouTube SSL blocks
-            def _ddg_search():
-                try:
-                    res = DDGS().text(f"site:youtube.com {original_query}", max_results=1)
-                    if res:
-                        return res[0]["href"]
-                except Exception as e:
-                    log.error("DDG search error: %s", e)
-                return None
-            
-            found_url = await loop.run_in_executor(None, _ddg_search)
-            url_or_query = found_url if found_url else f"ytsearch1:{url_or_query}"
+            # Bypass third-party search and use yt-dlp's native YouTube search
+            url_or_query = f"ytsearch1:{url_or_query}"
 
         # 2. Try YouTube download
         result = await loop.run_in_executor(None, _download, url_or_query, video)
