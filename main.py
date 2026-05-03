@@ -1,0 +1,212 @@
+"""Entry point — wires bot + userbot + PyTgCalls and starts everything."""
+
+import os
+import shutil
+
+# ── Ensure FFmpeg/ffprobe are on PATH ──
+def _setup_ffmpeg_path() -> None:
+    """Add FFmpeg to PATH if not already available."""
+    if shutil.which("ffmpeg") and shutil.which("ffprobe"):
+        return  # Already on PATH
+
+    # Common install locations (Windows)
+    candidates = [
+        os.path.expanduser(r"~\AppData\Local\ffmpegio\ffmpeg-downloader\ffmpeg\bin"),
+        r"C:\ffmpeg\bin",
+        r"C:\Program Files\ffmpeg\bin",
+        r"C:\ProgramData\chocolatey\bin",
+    ]
+    # Also check imageio-ffmpeg
+    try:
+        import imageio_ffmpeg
+        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+        candidates.insert(0, os.path.dirname(ffmpeg_exe))
+    except ImportError:
+        pass
+
+    for path in candidates:
+        ffmpeg_path = os.path.join(path, "ffmpeg.exe")
+        ffprobe_path = os.path.join(path, "ffprobe.exe")
+        if os.path.isfile(ffmpeg_path) and os.path.isfile(ffprobe_path):
+            os.environ["PATH"] = path + os.pathsep + os.environ.get("PATH", "")
+            return
+
+_setup_ffmpeg_path()
+
+# ── Monkey-patch: strip unsupported 'once' kwarg from logging calls ──
+# yt-dlp calls logging.debug(msg, once=True) but the 'once' parameter
+# was only introduced in Python 3.12. On 3.11 (our Docker base), this
+# causes fatal crashes during downloads. Stripping it is harmless.
+import sys
+if sys.version_info < (3, 12):
+    import logging as _logging
+    _original_debug = _logging.Logger.debug
+    _original_info = _logging.Logger.info
+    _original_warning = _logging.Logger.warning
+
+    def _patched_debug(self, msg, *args, **kwargs):
+        kwargs.pop("once", None)
+        return _original_debug(self, msg, *args, **kwargs)
+
+    def _patched_info(self, msg, *args, **kwargs):
+        kwargs.pop("once", None)
+        return _original_info(self, msg, *args, **kwargs)
+
+    def _patched_warning(self, msg, *args, **kwargs):
+        kwargs.pop("once", None)
+        return _original_warning(self, msg, *args, **kwargs)
+
+    _logging.Logger.debug = _patched_debug
+    _logging.Logger.info = _patched_info
+    _logging.Logger.warning = _patched_warning
+# ── End logging patch ──
+
+# ── Monkey-patch: inject missing error class into pyrogram.errors ──
+# py-tgcalls 2.2.11 imports GroupcallForbidden which pyrogram 2.0.106 lacks.
+import pyrogram.errors as _pe
+
+if not hasattr(_pe, "GroupcallForbidden"):
+
+    class GroupcallForbidden(Exception):
+        """Stub: The group call has forbidden the action."""
+        ID = "GROUPCALL_FORBIDDEN"
+        MESSAGE = "The group call has forbidden the action."
+
+    _pe.GroupcallForbidden = GroupcallForbidden
+    # Also inject into the exceptions sub-module if it exists
+    if hasattr(_pe, "exceptions"):
+        _pe.exceptions.GroupcallForbidden = GroupcallForbidden
+# ── End patch ──
+
+import asyncio
+import logging
+
+from pyrogram import Client
+from pytgcalls import PyTgCalls
+from pytgcalls.types import Update
+
+from bot import register_handlers
+from config import Config
+from player.queue import QueueManager
+from player.stream import StreamManager
+from userbot import create_userbot
+from utils.youtube import YouTubeExtractor
+
+# ── Logging ─────────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)-8s | %(name)s — %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+log = logging.getLogger("main")
+
+
+async def main() -> None:
+    # ── Validate config ──
+    Config.validate()
+    log.info("Config validated ✓")
+
+    # ── Create clients ──
+    userbot = create_userbot()
+    bot = Client(
+        name="music_bot",
+        api_id=Config.API_ID,
+        api_hash=Config.API_HASH,
+        bot_token=Config.BOT_TOKEN,
+    )
+
+    # ── PyTgCalls wraps the userbot ──
+    pytgcalls = PyTgCalls(userbot)
+
+    # ── Managers ──
+    queue_mgr = QueueManager()
+    stream_mgr = StreamManager(pytgcalls)
+
+    # ── Auto-advance callback ──
+    async def on_track_end(chat_id: int) -> None:
+        """Called when a stream finishes — play next track or leave VC."""
+        # Clean up the just-finished local temp file
+        prev = queue_mgr.get_current(chat_id)
+        if prev and prev.get("local_file"):
+            from utils.youtube import _cleanup
+            _cleanup(prev["stream_url"])
+
+        next_track = queue_mgr.advance(chat_id)
+        if next_track:
+            try:
+                video = next_track.get("video", False)
+                await stream_mgr.play(
+                    chat_id, 
+                    next_track["stream_url"], 
+                    audio_url=next_track.get("audio_url", ""),
+                    video=video
+                )
+                log.info("Auto-advanced to: %s", next_track.get("title", "?"))
+            except Exception as exc:
+                log.error("Auto-advance failed in chat %d: %s", chat_id, exc)
+                queue_mgr.full_clear(chat_id)
+        else:
+            await stream_mgr.stop(chat_id)
+            queue_mgr.full_clear(chat_id)
+            log.info("Queue empty in chat %d — left VC", chat_id)
+
+    stream_mgr.set_on_track_end(on_track_end)
+
+    # ── Register PyTgCalls stream-end handler ──
+    @pytgcalls.on_update()
+    async def on_update(client: PyTgCalls, update: Update) -> None:
+        """Handle all PyTgCalls updates — detect stream end."""
+        # The update object has chat_id and status attributes
+        if hasattr(update, "chat_id") and hasattr(update, "status"):
+            from pytgcalls.types import MediaStream
+
+            # Check if the stream has ended
+            status_name = str(update.status).lower() if update.status else ""
+            if "ended" in status_name or "stopped" in status_name:
+                await stream_mgr.handle_stream_end(update.chat_id)
+
+    # ── Register bot command handlers ──
+    register_handlers(bot, stream_mgr, queue_mgr)
+    log.info("Command handlers registered ✓")
+
+    # ── Start everything ──
+    await userbot.start()
+    log.info("Userbot started ✓")
+
+    await bot.start()
+    log.info("Bot started ✓")
+
+    await pytgcalls.start()
+    log.info("PyTgCalls started ✓")
+
+    log.info("━" * 50)
+    log.info("🎵 Music Bot is running! Press Ctrl+C to stop.")
+    log.info("━" * 50)
+
+    # ── Start dummy web server for Cloud Providers (e.g. Hugging Face) ──
+    from aiohttp import web
+    async def handle_ping(request):
+        return web.Response(text="Bot is alive and streaming! 🎵")
+    
+    web_app = web.Application()
+    web_app.router.add_get("/", handle_ping)
+    runner = web.AppRunner(web_app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", 7860)
+    await site.start()
+    log.info("Dummy web server started on port 7860 ✓")
+
+    # ── Keep alive ──
+    try:
+        await asyncio.Event().wait()
+    except (KeyboardInterrupt, SystemExit):
+        log.info("Shutting down…")
+    finally:
+        await pytgcalls.stop() if hasattr(pytgcalls, "stop") else None
+        await bot.stop()
+        await userbot.stop()
+        log.info("Shutdown complete.")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

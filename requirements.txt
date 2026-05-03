@@ -1,0 +1,8 @@
+pyrogram==2.0.106
+tgcrypto==1.2.5
+py-tgcalls[pyrogram]==2.2.11
+yt-dlp
+ytmusicapi
+aiohttp
+python-dotenv
+aiofiles

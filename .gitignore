@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.session
+.env
+cookies.txt
+test.json
+*.egg-info/
+dist/
+build/
