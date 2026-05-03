@@ -44,6 +44,9 @@ _BASE_YDL_OPTS: dict = {
             "base_url": ["http://127.0.0.1:4416"]
         }
     },
+    
+    # ── EJS Solver for JS Signatures ──
+    "remote_components": ["ejs:github"],
 
     # ── IPv4 forcing: prevent IPv6 blackholes on cloud providers ──
     "source_address": "0.0.0.0",

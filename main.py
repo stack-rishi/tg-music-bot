@@ -1,7 +1,8 @@
-"""Entry point — wires bot + userbot + PyTgCalls and starts everything."""
-
 import os
 import shutil
+import subprocess
+import asyncio
+import logging
 
 # ── Ensure FFmpeg/ffprobe are on PATH ──
 def _setup_ffmpeg_path() -> None:
@@ -101,7 +102,40 @@ logging.basicConfig(
 log = logging.getLogger("main")
 
 
+def _setup_pot_server() -> None:
+    """Clones, builds, and starts the PO Token provider background service."""
+    repo_url = "https://github.com/BtbN/bgutil-ytdlp-pot-provider.git"
+    repo_dir = "bgutil-ytdlp-pot-provider"
+
+    if not os.path.exists(repo_dir):
+        log.info("PO Token provider not found. Cloning...")
+        try:
+            subprocess.run(["git", "clone", repo_url], check=True)
+            log.info("Installing dependencies for PO Token provider...")
+            subprocess.run(["npm", "install"], cwd=repo_dir, check=True)
+            log.info("Building PO Token provider...")
+            subprocess.run(["npx", "tsc"], cwd=repo_dir, check=True)
+        except Exception as e:
+            log.error(f"Failed to setup PO Token provider: {e}")
+            return
+
+    log.info("Starting PO Token provider on port 4416...")
+    try:
+        # Check if already running (simple port check or just try to start)
+        subprocess.Popen(
+            ["node", "dist/index.js"],
+            cwd=repo_dir,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception as e:
+        log.error(f"Failed to start PO Token provider: {e}")
+
+
 async def main() -> None:
+    # ── Setup background services ──
+    _setup_pot_server()
+
     # ── Validate config ──
     Config.validate()
     log.info("Config validated ✓")
