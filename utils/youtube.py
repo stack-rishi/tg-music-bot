@@ -18,7 +18,6 @@ import tempfile
 import uuid
 
 import yt_dlp
-from ytmusicapi import YTMusic
 
 log = logging.getLogger(__name__)
 
@@ -44,6 +43,9 @@ _BASE_YDL_OPTS: dict = {
         "youtube": {
             "player_client": ["tv", "web_embedded", "mweb"],
         },
+        "youtubepot-bgutilhttp": {
+            "base_url": ["http://127.0.0.1:4416"]
+        }
     },
 
     # ── IPv4 forcing: prevent IPv6 blackholes on cloud providers ──
@@ -100,36 +102,6 @@ class YouTubeExtractor:
         return text.startswith(("http://", "https://", "www."))
 
     @classmethod
-    async def search(cls, query: str, max_results: int = 5) -> list[dict]:
-        """Search YouTube Music (no scraping, no bot detection)."""
-        loop = asyncio.get_running_loop()
-
-        def _do_search():
-            try:
-                ytm = YTMusic()
-                results = ytm.search(query, filter="songs", limit=max_results)
-                return results or []
-            except Exception as e:
-                log.error("YTMusic search error: %s", e)
-                return []
-
-        raw = await loop.run_in_executor(None, _do_search)
-
-        formatted = []
-        for r in raw:
-            video_id = r.get("videoId")
-            if not video_id:
-                continue
-            artists = r.get("artists", [])
-            formatted.append({
-                "title": r.get("title", "Unknown"),
-                "url": f"https://www.youtube.com/watch?v={video_id}",
-                "duration": r.get("duration_seconds", 0),
-                "uploader": artists[0]["name"] if artists else "Unknown",
-            })
-        return formatted
-
-    @classmethod
     async def extract_info(
         cls, url_or_query: str, video: bool = False
     ) -> dict | None:
@@ -142,12 +114,8 @@ class YouTubeExtractor:
         # 1. Resolve query → URL
         original_query = url_or_query
         if not cls._is_url(url_or_query):
-            results = await cls.search(url_or_query, max_results=1)
-            if not results:
-                # If ytmusicapi search also fails, try direct yt-dlp search
-                url_or_query = f"ytsearch1:{url_or_query}"
-            else:
-                url_or_query = results[0]["url"]
+            # Bypass third-party search and use yt-dlp's native YouTube search
+            url_or_query = f"ytsearch1:{url_or_query}"
 
         # 2. Try YouTube download
         result = await loop.run_in_executor(None, _download, url_or_query, video)
