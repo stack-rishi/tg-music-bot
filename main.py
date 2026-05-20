@@ -102,6 +102,27 @@ logging.basicConfig(
 log = logging.getLogger("main")
 
 
+def _cleanup_stray_temp_files() -> None:
+    """Scan the temp directory and delete any files starting with 'musicbot_' from past runs."""
+    import tempfile
+    tmp_dir = tempfile.gettempdir()
+    log.info(f"Cleaning up stray temp files in {tmp_dir}...")
+    count = 0
+    try:
+        for fname in os.listdir(tmp_dir):
+            if fname.startswith("musicbot_"):
+                fpath = os.path.join(tmp_dir, fname)
+                try:
+                    os.remove(fpath)
+                    count += 1
+                except Exception:
+                    pass
+        if count > 0:
+            log.info(f"Successfully cleaned up {count} stray temp files")
+    except Exception as e:
+        log.warning(f"Error during stray temp files cleanup: {e}")
+
+
 def _setup_pot_server() -> None:
     """Clones, builds, and starts the PO Token provider background service."""
     repo_url = "https://github.com/Brainicism/bgutil-ytdlp-pot-provider.git"
@@ -137,6 +158,9 @@ def _setup_pot_server() -> None:
 
 
 async def main() -> None:
+    # ── Clean up stray files from past crashes ──
+    _cleanup_stray_temp_files()
+
     # ── Setup background services ──
     _setup_pot_server()
 

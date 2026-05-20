@@ -126,7 +126,11 @@ class YouTubeExtractor:
 
 
 def _download(url: str, video: bool) -> dict | None:
-    """Download a track to /tmp. Returns metadata dict or None."""
+    """Download or extract a track.
+    
+    If track is under 15 minutes, download to /tmp (highest stability).
+    If track is 15 minutes or longer, return direct HTTP stream URLs (disk-safe, instant play).
+    """
     uid = uuid.uuid4().hex
     out_template = os.path.join(_TMP_DIR, f"musicbot_{uid}.%(ext)s")
 
@@ -135,29 +139,99 @@ def _download(url: str, video: bool) -> dict | None:
     else:
         fmt = "bestaudio*/best"
 
-    ydl_opts = {
+    ydl_opts_meta = {
         **_BASE_YDL_OPTS,
         "format": fmt,
-        "outtmpl": out_template,
-        # Merge video+audio if needed (requires ffmpeg)
-        "postprocessors": [] if video else [
-            {
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
-                "preferredquality": "192",
-            }
-        ],
     }
 
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
+        # Step 1: Extract metadata first (no download)
+        log.info("Extracting metadata for %r", url)
+        with yt_dlp.YoutubeDL(ydl_opts_meta) as ydl:
+            info = ydl.extract_info(url, download=False)
 
         if not info:
             return None
 
-        # yt-dlp renames the file after post-processing;
-        # find it by scanning for the uid prefix
+        # Resolve entry if search result
+        video_info = info
+        if "entries" in info:
+            if not info["entries"]:
+                log.error("No search results found for %r", url)
+                return None
+            video_info = info["entries"][0]
+
+        duration = video_info.get("duration", 0)
+        webpage_url = video_info.get("webpage_url", url)
+
+        # Step 2: Determine strategy based on duration
+        # Direct stream if >= 15 minutes (900 seconds)
+        is_large_media = duration >= 900
+
+        if is_large_media:
+            log.info("Large media detected (%ds) — using direct HTTP streaming", duration)
+            
+            stream_url = None
+            audio_url = None
+
+            if video:
+                req_formats = video_info.get("requested_formats")
+                if req_formats and len(req_formats) >= 2:
+                    for f in req_formats:
+                        if f.get("vcodec") != "none" and f.get("acodec") == "none":
+                            stream_url = f["url"]
+                        elif f.get("acodec") != "none" and f.get("vcodec") == "none":
+                            audio_url = f["url"]
+                    if not stream_url or not audio_url:
+                        stream_url = req_formats[0]["url"]
+                        audio_url = req_formats[1]["url"]
+                else:
+                    stream_url = video_info.get("url")
+            else:
+                req_formats = video_info.get("requested_formats")
+                if req_formats:
+                    stream_url = req_formats[0]["url"]
+                else:
+                    stream_url = video_info.get("url")
+
+            if not stream_url:
+                log.error("Failed to extract stream URL for %r", webpage_url)
+                return None
+
+            return {
+                "title": video_info.get("title", "Unknown"),
+                "duration": duration,
+                "stream_url": stream_url,
+                "audio_url": audio_url or "",
+                "thumbnail": video_info.get("thumbnail", ""),
+                "url": webpage_url,
+                "uploader": video_info.get("uploader", "Unknown"),
+                "local_file": False,
+            }
+
+        # For short tracks, proceed to download for stability
+        log.info("Short track detected (%ds) — downloading for high-stability playback", duration)
+        ydl_opts_download = {
+            **_BASE_YDL_OPTS,
+            "format": fmt,
+            "outtmpl": out_template,
+            "postprocessors": [] if video else [
+                {
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": "192",
+                }
+            ],
+        }
+
+        # Download the specific resolved video webpage_url to avoid re-searching
+        with yt_dlp.YoutubeDL(ydl_opts_download) as ydl:
+            download_info = ydl.extract_info(webpage_url, download=True)
+
+        if not download_info:
+            return None
+
+        # Find downloaded file
         downloaded = None
         for fname in os.listdir(_TMP_DIR):
             if fname.startswith(f"musicbot_{uid}"):
@@ -165,19 +239,20 @@ def _download(url: str, video: bool) -> dict | None:
                 break
 
         if not downloaded or not os.path.exists(downloaded):
-            log.error("Downloaded file not found for %r", url)
+            log.error("Downloaded file not found for %r", webpage_url)
             return None
 
         return {
-            "title": info.get("title", "Unknown"),
-            "duration": info.get("duration", 0),
-            "stream_url": downloaded,   # Local file path!
-            "audio_url": "",            # Not needed for local files
-            "thumbnail": info.get("thumbnail", ""),
-            "url": info.get("webpage_url", url),
-            "uploader": info.get("uploader", "Unknown"),
-            "local_file": True,         # Flag so bot can clean up later
+            "title": download_info.get("title", "Unknown"),
+            "duration": duration,
+            "stream_url": downloaded,
+            "audio_url": "",
+            "thumbnail": download_info.get("thumbnail", ""),
+            "url": webpage_url,
+            "uploader": download_info.get("uploader", "Unknown"),
+            "local_file": True,
         }
+
     except Exception as e:
-        log.error("yt-dlp download failed for %r: %s", url, e)
+        log.error("Extraction/download failed for %r: %s", url, e)
         return None

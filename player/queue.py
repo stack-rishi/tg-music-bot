@@ -1,6 +1,5 @@
-"""Per-chat queue manager with loop and shuffle support."""
-
 import random
+import os
 from enum import Enum
 from typing import Optional
 
@@ -9,6 +8,19 @@ class LoopMode(Enum):
     OFF = "off"
     SINGLE = "single"
     ALL = "all"
+
+
+def _cleanup_track_file(track: Optional[dict]) -> None:
+    """Helper to delete local files associated with a track."""
+    if not track:
+        return
+    if track.get("local_file") and track.get("stream_url"):
+        try:
+            path = track["stream_url"]
+            if os.path.exists(path):
+                os.remove(path)
+        except Exception:
+            pass
 
 
 class _ChatQueue:
@@ -49,8 +61,11 @@ class _ChatQueue:
 
         Returns the next track or None.
         """
-        if self.loop_mode == LoopMode.ALL and self.current:
-            self.upcoming.append(self.current)
+        old_current = self.current
+        if self.loop_mode == LoopMode.ALL and old_current:
+            self.upcoming.append(old_current)
+        else:
+            _cleanup_track_file(old_current)
 
         if self.upcoming:
             self.current = self.upcoming.pop(0)
@@ -65,10 +80,15 @@ class _ChatQueue:
 
     def clear(self) -> None:
         """Clear upcoming tracks; current still plays."""
+        for track in self.upcoming:
+            _cleanup_track_file(track)
         self.upcoming.clear()
 
     def full_clear(self) -> None:
         """Clear everything including the current track."""
+        _cleanup_track_file(self.current)
+        for track in self.upcoming:
+            _cleanup_track_file(track)
         self.current = None
         self.upcoming.clear()
 
