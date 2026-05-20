@@ -80,9 +80,11 @@ else:
     log.warning("No cookies.txt found — YouTube may rate-limit more aggressively")
 
 # EJS solver requires Node.js (installed in Docker image)
-if shutil.which("node"):
+node_path = shutil.which("node")
+if node_path:
     _BASE_YDL_OPTS["remote_components"] = ["ejs:github"]
-    log.info("Node.js found — EJS signature solver enabled")
+    _BASE_YDL_OPTS["js_runtimes"] = {"node": {"path": node_path}}
+    log.info(f"Node.js found at {node_path} — EJS signature solver enabled")
 
 
 def _cleanup(path: str):
