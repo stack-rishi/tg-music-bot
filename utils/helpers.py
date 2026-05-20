@@ -1,5 +1,30 @@
 """Helper utilities — formatting, message builders."""
 
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+
+def get_now_playing_markup(is_paused: bool = False) -> InlineKeyboardMarkup:
+    """Generate the inline controls keyboard markup."""
+    play_pause_btn = (
+        InlineKeyboardButton("▶️ Resume", callback_data="cb_resume")
+        if is_paused
+        else InlineKeyboardButton("⏸ Pause", callback_data="cb_pause")
+    )
+    return InlineKeyboardMarkup(
+        [
+            [
+                play_pause_btn,
+                InlineKeyboardButton("⏭ Skip", callback_data="cb_skip"),
+                InlineKeyboardButton("⏹ Stop", callback_data="cb_stop"),
+            ],
+            [
+                InlineKeyboardButton("🔄 Loop", callback_data="cb_loop"),
+                InlineKeyboardButton("📋 Queue", callback_data="cb_queue"),
+                InlineKeyboardButton("🔀 Shuffle", callback_data="cb_shuffle"),
+            ],
+        ]
+    )
+
 
 def format_duration(seconds: int | float | None) -> str:
     """Convert seconds to human-readable duration string.

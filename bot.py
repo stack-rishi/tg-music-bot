@@ -13,6 +13,7 @@ from utils.helpers import (
     build_queue_message,
     build_queued_message,
     format_duration,
+    get_now_playing_markup,
 )
 from utils.youtube import YouTubeExtractor
 
@@ -122,7 +123,10 @@ def register_handlers(
                     audio_url=track.get("audio_url", ""),
                     video=video
                 )
-                await status_msg.edit_text(build_now_playing(track, video=video))
+                await status_msg.edit_text(
+                    build_now_playing(track, video=video),
+                    reply_markup=get_now_playing_markup(is_paused=False),
+                )
             except Exception as exc:
                 queue.full_clear(chat_id)
                 log.error("Play failed: %s", exc)
@@ -162,7 +166,8 @@ def register_handlers(
                     video=video
                 )
                 await message.reply_text(
-                    f"Skipped. Now playing:\n\n{build_now_playing(next_track, video=video)}",
+                    build_now_playing(next_track, video=video),
+                    reply_markup=get_now_playing_markup(is_paused=False),
                     quote=True,
                 )
             except Exception as exc:
@@ -263,3 +268,95 @@ def register_handlers(
     async def cmd_clear(client: Client, message: Message):
         queue.clear(message.chat.id)
         await message.reply_text("Upcoming queue cleared. The current track will continue playing.", quote=True)
+
+    # ── Inline Callbacks ────────────────────────────────────────
+    @bot.on_callback_query(filters.regex(r"^cb_"))
+    async def handle_callbacks(client: Client, callback_query):
+        chat_id = callback_query.message.chat.id
+        data = callback_query.data
+
+        if data == "cb_pause":
+            ok = await stream.pause(chat_id)
+            if ok:
+                try:
+                    await callback_query.edit_message_reply_markup(
+                        reply_markup=get_now_playing_markup(is_paused=True)
+                    )
+                    await callback_query.answer("Playback paused.")
+                except Exception:
+                    pass
+            else:
+                await callback_query.answer("Failed to pause playback.", show_alert=True)
+
+        elif data == "cb_resume":
+            ok = await stream.resume(chat_id)
+            if ok:
+                try:
+                    await callback_query.edit_message_reply_markup(
+                        reply_markup=get_now_playing_markup(is_paused=False)
+                    )
+                    await callback_query.answer("Playback resumed.")
+                except Exception:
+                    pass
+            else:
+                await callback_query.answer("Failed to resume playback.", show_alert=True)
+
+        elif data == "cb_skip":
+            if not queue.get_current(chat_id):
+                await callback_query.answer("There is currently nothing playing.", show_alert=True)
+                return
+
+            next_track = queue.skip(chat_id)
+            if next_track:
+                try:
+                    video = next_track.get("video", False)
+                    await stream.play(
+                        chat_id, 
+                        next_track["stream_url"], 
+                        audio_url=next_track.get("audio_url", ""),
+                        video=video
+                    )
+                    await callback_query.message.edit_text(
+                        build_now_playing(next_track, video=video),
+                        reply_markup=get_now_playing_markup(is_paused=False)
+                    )
+                    await callback_query.answer("Skipped to next track.")
+                except Exception as exc:
+                    log.error("Callback skip failed: %s", exc)
+                    await callback_query.answer("Failed to stream the next track.", show_alert=True)
+            else:
+                await stream.stop(chat_id)
+                queue.full_clear(chat_id)
+                await callback_query.message.edit_text("Skipped. The queue is now empty. Disconnected from voice chat.")
+                await callback_query.answer("Queue empty. Disconnected.")
+
+        elif data == "cb_stop":
+            await stream.stop(chat_id)
+            queue.full_clear(chat_id)
+            await callback_query.message.edit_text("Stopped playback and left the voice chat.")
+            await callback_query.answer("Playback stopped.")
+
+        elif data == "cb_loop":
+            mode = queue.toggle_loop(chat_id)
+            labels = {"off": "Off", "single": "Single Track", "all": "Entire Queue"}
+            await callback_query.answer(f"Loop setting: {labels.get(mode.value, 'Off')}")
+
+        elif data == "cb_queue":
+            current = queue.get_current(chat_id)
+            upcoming = queue.get_queue(chat_id)
+            loop_mode = queue.get_loop_mode(chat_id)
+
+            if not current and not upcoming:
+                await callback_query.answer("The queue is currently empty.", show_alert=True)
+                return
+
+            text = build_queue_message(upcoming, current, loop_mode, 10)
+            await callback_query.message.reply_text(text, quote=False)
+            await callback_query.answer()
+
+        elif data == "cb_shuffle":
+            if queue.get_length(chat_id) < 2:
+                await callback_query.answer("Not enough tracks in the queue to shuffle.", show_alert=True)
+                return
+            queue.shuffle(chat_id)
+            await callback_query.answer("Queue shuffled.")
