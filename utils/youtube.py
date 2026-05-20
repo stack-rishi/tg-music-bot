@@ -132,7 +132,9 @@ def _download(url: str, video: bool) -> dict | None:
     out_template = os.path.join(_TMP_DIR, f"musicbot_{uid}.%(ext)s")
 
     if video:
-        fmt = "bestvideo[height<=720]+bestaudio/best[height<=720]/best"
+        # Prioritize H264 (avc1) to drastically reduce ffmpeg decoding overhead
+        # which eliminates video lag and stuttering on low-end servers.
+        fmt = "bestvideo[height<=720][vcodec^=avc1]+bestaudio/bestvideo[height<=720]+bestaudio/best[height<=720]/best"
     else:
         fmt = "bestaudio*/best"
 
