@@ -32,11 +32,12 @@ def build_now_playing(track: dict, video: bool = False) -> str:
     url = track.get("url", "")
 
     lines = [
-        f"**Now Playing ({mode})**",
+        f"🔊 **Now Playing on GlissStream**",
         "",
-        f"Title: [{truncate(title, 50)}]({url})" if url else f"Title: {truncate(title, 50)}",
-        f"Duration: {duration}",
-        f"Uploader: {uploader}",
+        f"• **Title:** [{truncate(title, 50)}]({url})" if url else f"• **Title:** {truncate(title, 50)}",
+        f"• **Format:** {mode} (720p HD / 48kHz Stereo)",
+        f"• **Duration:** `{duration}`",
+        f"• **Source:** {uploader}",
     ]
     return "\n".join(lines)
 
@@ -46,9 +47,10 @@ def build_queued_message(track: dict, position: int) -> str:
     title = track.get("title", "Unknown")
     duration = format_duration(track.get("duration"))
     return (
-        f"**Added to Queue (Position #{position})**\n\n"
-        f"Title: {truncate(title, 50)}\n"
-        f"Duration: {duration}"
+        f"📥 **Added to Queue**\n\n"
+        f"• **Title:** {truncate(title, 50)}\n"
+        f"• **Duration:** `{duration}`\n"
+        f"• **Position:** Queue Slot #{position}"
     )
 
 
@@ -59,26 +61,27 @@ def build_queue_message(
     max_display: int = 15,
 ) -> str:
     """Build the full queue display message."""
-    lines = ["**Queue**\n"]
+    lines = ["📋 **GlissStream Queue Console**\n"]
 
     if current:
         title = truncate(current.get("title", "Unknown"), 45)
         dur = format_duration(current.get("duration"))
-        lines.append(f"Now playing: {title} — {dur}\n")
+        lines.append(f"**Currently Streaming:**\n▶️ {title} — `{dur}`\n")
 
+    lines.append("**Up Next:**")
     if not queue_list:
         lines.append("_No upcoming tracks._")
     else:
         for i, track in enumerate(queue_list[:max_display], 1):
             title = truncate(track.get("title", "Unknown"), 40)
             dur = format_duration(track.get("duration"))
-            lines.append(f"{i}. {title} — {dur}")
+            lines.append(f"`{i}.` {title} — `{dur}`")
 
         remaining = len(queue_list) - max_display
         if remaining > 0:
             lines.append(f"\n_... and {remaining} more_")
 
     loop_label = {"off": "Off", "single": "Single Track", "all": "Entire Queue"}
-    lines.append(f"\nLoop: **{loop_label.get(loop_mode, 'Off')}**")
-    lines.append(f"Total: **{len(queue_list)}** upcoming tracks")
+    lines.append("\n---")
+    lines.append(f"🔄 **Loop Mode:** {loop_label.get(loop_mode, 'Off')} | 📊 **Active Pool:** {len(queue_list)} tracks")
     return "\n".join(lines)

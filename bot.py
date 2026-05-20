@@ -36,35 +36,40 @@ def register_handlers(
     @bot.on_message(filters.command("start") & filters.group)
     async def cmd_start(client: Client, message: Message):
         await message.reply_text(
-            "Hello. I am a music bot configured to play audio and video in group voice chats.\n\n"
-            "Use /help to see all available commands.",
+            "Hello! I am **GlissStream**, a high-performance audio and video streaming system configured for group calls.\n\n"
+            "Use /help to view the system command console.",
             quote=True,
         )
 
     @bot.on_message(filters.command("start") & filters.private)
     async def cmd_start_private(client: Client, message: Message):
         await message.reply_text(
-            "Hello. To use me, add me to your group, join the voice chat, and send /play <song name> to play audio.\n\n"
-            "Send /help for a complete list of commands.",
+            "Hello! I am **GlissStream**, an advanced audio and video streaming client designed for Telegram group calls.\n\n"
+            "**How to get started:**\n"
+            "1. Add me to your group chat.\n"
+            "2. Join or start the group's video/voice chat.\n"
+            "3. Use `/play <song/link>` to start streaming instantly.\n\n"
+            "Send /help to view the full command console.",
         )
 
     # ── /help ───────────────────────────────────────────────────
     @bot.on_message(filters.command("help"))
     async def cmd_help(client: Client, message: Message):
         await message.reply_text(
-            "**Music Bot Commands**\n\n"
-            "• `/play <url/query>` — Play audio\n"
-            "• `/vplay <url/query>` — Play video\n"
-            "• `/skip` — Skip current track\n"
-            "• `/stop` — Stop playback and leave the voice chat\n"
-            "• `/pause` — Pause playback\n"
-            "• `/resume` — Resume playback\n"
-            "• `/queue` — View the queue\n"
-            "• `/volume <1-200>` — Set volume level\n"
-            "• `/loop` — Toggle loop mode\n"
-            "• `/shuffle` — Shuffle the queue\n"
-            "• `/clear` — Clear all upcoming tracks\n\n"
-            "If you experience any issues or need assistance, please contact the owner: @Ri5h11.",
+            "⚡ **GlissStream Command Console**\n\n"
+            "• `/play <query/url>` — Stream high-fidelity audio\n"
+            "• `/vplay <query/url>` — Stream HD video (up to 720p)\n"
+            "• `/skip` — Advance to the next track in the queue\n"
+            "• `/stop` — Terminate the current stream and disconnect\n"
+            "• `/pause` — Suspend playback temporarily\n"
+            "• `/resume` — Continue playback of the suspended stream\n"
+            "• `/queue` — View all upcoming tracks and current mode\n"
+            "• `/volume <1-200>` — Calibrate stream volume\n"
+            "• `/loop` — Cycle loop settings (Single / Queue / Off)\n"
+            "• `/shuffle` — Randomize upcoming tracks\n"
+            "• `/clear` — Wipe the upcoming queue\n\n"
+            "🔧 **Support & Operations:**\n"
+            "For technical issues or assistance, contact the systems owner: @Ri5h11.",
             quote=True,
         )
 
