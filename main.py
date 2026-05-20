@@ -104,29 +104,33 @@ log = logging.getLogger("main")
 
 def _setup_pot_server() -> None:
     """Clones, builds, and starts the PO Token provider background service."""
-    repo_url = "https://github.com/BtbN/bgutil-ytdlp-pot-provider.git"
+    repo_url = "https://github.com/Brainicism/bgutil-ytdlp-pot-provider.git"
     repo_dir = "bgutil-ytdlp-pot-provider"
+    server_dir = os.path.join(repo_dir, "server")
 
     if not os.path.exists(repo_dir):
         log.info("PO Token provider not found. Cloning...")
         try:
-            subprocess.run(["git", "clone", repo_url], check=True)
+            subprocess.run(["git", "clone", "--single-branch", "--branch", "1.3.1", repo_url, repo_dir], check=True)
             log.info("Installing dependencies for PO Token provider...")
-            subprocess.run(["npm", "install"], cwd=repo_dir, check=True)
+            subprocess.run(["npm", "ci", "--include=dev"], cwd=server_dir, check=True)
+            log.info("Installing typescript compiler...")
+            subprocess.run(["npm", "install", "typescript"], cwd=server_dir, check=True)
             log.info("Building PO Token provider...")
-            subprocess.run(["npx", "tsc"], cwd=repo_dir, check=True)
+            subprocess.run(["npx", "--yes", "tsc"], cwd=server_dir, check=True)
         except Exception as e:
             log.error(f"Failed to setup PO Token provider: {e}")
             return
 
     log.info("Starting PO Token provider on port 4416...")
     try:
-        # Check if already running (simple port check or just try to start)
+        # Spawn node in background, redirect output to pot_server.log
+        pot_log = open(os.path.join(server_dir, "pot_server_musicbot.log"), "w")
         subprocess.Popen(
-            ["node", "dist/index.js"],
-            cwd=repo_dir,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            ["node", "--experimental-require-module", "build/main.js"],
+            cwd=server_dir,
+            stdout=pot_log,
+            stderr=pot_log,
         )
     except Exception as e:
         log.error(f"Failed to start PO Token provider: {e}")
