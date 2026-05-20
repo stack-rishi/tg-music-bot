@@ -79,8 +79,7 @@ if not hasattr(_pe, "GroupcallForbidden"):
         _pe.exceptions.GroupcallForbidden = GroupcallForbidden
 # ── End patch ──
 
-import asyncio
-import logging
+
 
 from pyrogram import Client
 from pytgcalls import PyTgCalls
@@ -143,16 +142,27 @@ def _setup_pot_server() -> None:
             log.error(f"Failed to setup PO Token provider: {e}")
             return
 
+    # Check if port 4416 is already in use (e.g. LyrifusionBot's PO Token server)
+    import socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.settimeout(1)
+        sock.connect(("127.0.0.1", 4416))
+        sock.close()
+        log.info("PO Token provider already running on port 4416 — skipping spawn")
+        return
+    except (ConnectionRefusedError, OSError):
+        sock.close()
+
     log.info("Starting PO Token provider on port 4416...")
     try:
-        # Spawn node in background, redirect output to pot_server.log
-        pot_log = open(os.path.join(server_dir, "pot_server_musicbot.log"), "w")
-        subprocess.Popen(
-            ["node", "--experimental-require-module", "build/main.js"],
-            cwd=server_dir,
-            stdout=pot_log,
-            stderr=pot_log,
-        )
+        with open(os.path.join(server_dir, "pot_server_musicbot.log"), "w") as pot_log:
+            subprocess.Popen(
+                ["node", "--experimental-require-module", "build/main.js"],
+                cwd=server_dir,
+                stdout=pot_log,
+                stderr=pot_log,
+            )
     except Exception as e:
         log.error(f"Failed to start PO Token provider: {e}")
 
@@ -187,9 +197,12 @@ async def main() -> None:
     # ── Auto-advance callback ──
     async def on_track_end(chat_id: int) -> None:
         """Called when a stream finishes — play next track or leave VC."""
-        # Clean up the just-finished local temp file
+        # Clean up the just-finished local temp file,
+        # BUT only if loop mode is not SINGLE (since SINGLE replays the same file)
+        from player.queue import LoopMode
         prev = queue_mgr.get_current(chat_id)
-        if prev and prev.get("local_file"):
+        loop_mode = queue_mgr.get_loop_mode(chat_id)
+        if prev and prev.get("local_file") and loop_mode != LoopMode.SINGLE.value:
             from utils.youtube import _cleanup
             _cleanup(prev["stream_url"])
 

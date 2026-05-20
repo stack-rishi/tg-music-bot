@@ -1,13 +1,10 @@
 """YouTube search and stream extraction.
 
 Strategy:
-  - Search: ytmusicapi (native API, immune to bot detection)
-  - Extraction: yt-dlp download to /tmp with full anti-block stack:
-      • Client spoofing (mweb + tv) to bypass SABR streaming
-      • cookies.txt authentication to look like a real user
-      • IPv4 forcing to avoid IPv6 blackholes on cloud providers
-      • EJS solver for JavaScript signature challenges
-      • SoundCloud fallback if YouTube completely fails
+  - Search: yt-dlp native ytsearch1: (single pipeline, no third-party libs)
+  - Short tracks (<15 min): download to /tmp for stability
+  - Large media (≥15 min): direct HTTP stream URLs for instant playback
+  - Anti-block stack: mweb+tv clients, cookies, PO tokens, EJS solver, IPv4
 """
 
 import asyncio
@@ -97,7 +94,7 @@ def _cleanup(path: str):
 
 
 class YouTubeExtractor:
-    """Search via ytmusicapi, download via yt-dlp with full bypass stack."""
+    """Search and extract via yt-dlp with full anti-block bypass stack."""
 
     @staticmethod
     def _is_url(text: str) -> bool:
