@@ -131,7 +131,7 @@ def _download(url: str, video: bool) -> dict | None:
     if video:
         fmt = "bestvideo[height<=720]+bestaudio/best[height<=720]/best"
     else:
-        fmt = "bestaudio/best"
+        fmt = "bestaudio*/best"
 
     ydl_opts = {
         **_BASE_YDL_OPTS,
