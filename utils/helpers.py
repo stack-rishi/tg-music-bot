@@ -25,18 +25,18 @@ def truncate(text: str, max_len: int = 40) -> str:
 
 def build_now_playing(track: dict, video: bool = False) -> str:
     """Build a formatted 'Now Playing' message."""
-    mode = "🎥 Video" if video else "🎵 Audio"
+    mode = "Video" if video else "Audio"
     title = track.get("title", "Unknown")
     duration = format_duration(track.get("duration"))
     uploader = track.get("uploader", "Unknown")
     url = track.get("url", "")
 
     lines = [
-        f"**{mode} — Now Playing**",
+        f"**Now Playing ({mode})**",
         "",
-        f"🎶 [{truncate(title, 50)}]({url})" if url else f"🎶 {truncate(title, 50)}",
-        f"⏱ Duration: `{duration}`",
-        f"👤 {uploader}",
+        f"Title: [{truncate(title, 50)}]({url})" if url else f"Title: {truncate(title, 50)}",
+        f"Duration: {duration}",
+        f"Uploader: {uploader}",
     ]
     return "\n".join(lines)
 
@@ -46,9 +46,9 @@ def build_queued_message(track: dict, position: int) -> str:
     title = track.get("title", "Unknown")
     duration = format_duration(track.get("duration"))
     return (
-        f"**Added to Queue #{position}**\n\n"
-        f"🎶 {truncate(title, 50)}\n"
-        f"⏱ Duration: `{duration}`"
+        f"**Added to Queue (Position #{position})**\n\n"
+        f"Title: {truncate(title, 50)}\n"
+        f"Duration: {duration}"
     )
 
 
@@ -59,12 +59,12 @@ def build_queue_message(
     max_display: int = 15,
 ) -> str:
     """Build the full queue display message."""
-    lines = ["**📋 Queue**\n"]
+    lines = ["**Queue**\n"]
 
     if current:
         title = truncate(current.get("title", "Unknown"), 45)
         dur = format_duration(current.get("duration"))
-        lines.append(f"▶️ **Now:** {title} — `{dur}`\n")
+        lines.append(f"Now playing: {title} — {dur}\n")
 
     if not queue_list:
         lines.append("_No upcoming tracks._")
@@ -72,13 +72,13 @@ def build_queue_message(
         for i, track in enumerate(queue_list[:max_display], 1):
             title = truncate(track.get("title", "Unknown"), 40)
             dur = format_duration(track.get("duration"))
-            lines.append(f"`{i}.` {title} — `{dur}`")
+            lines.append(f"{i}. {title} — {dur}")
 
         remaining = len(queue_list) - max_display
         if remaining > 0:
-            lines.append(f"\n_… and {remaining} more_")
+            lines.append(f"\n_... and {remaining} more_")
 
-    loop_label = {"off": "Off", "single": "🔂 Single", "all": "🔁 All"}
-    lines.append(f"\n🔄 Loop: **{loop_label.get(loop_mode, 'Off')}**")
-    lines.append(f"📊 Total: **{len(queue_list)}** upcoming")
+    loop_label = {"off": "Off", "single": "Single Track", "all": "Entire Queue"}
+    lines.append(f"\nLoop: **{loop_label.get(loop_mode, 'Off')}**")
+    lines.append(f"Total: **{len(queue_list)}** upcoming tracks")
     return "\n".join(lines)

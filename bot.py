@@ -36,37 +36,35 @@ def register_handlers(
     @bot.on_message(filters.command("start") & filters.group)
     async def cmd_start(client: Client, message: Message):
         await message.reply_text(
-            "👋 **Hey! I'm a Music Bot.**\n\n"
-            "I can play audio and video in voice chats.\n"
-            "Send `/help` for a list of commands.",
+            "Hello. I am a music bot configured to play audio and video in group voice chats.\n\n"
+            "Use /help to see all available commands.",
             quote=True,
         )
 
     @bot.on_message(filters.command("start") & filters.private)
     async def cmd_start_private(client: Client, message: Message):
         await message.reply_text(
-            "👋 **Hey! I'm a Music Bot.**\n\n"
-            "Add me to a group and start a voice chat,\n"
-            "then use `/play <song name>` to play music!\n\n"
-            "Send `/help` for all commands.",
+            "Hello. To use me, add me to your group, join the voice chat, and send /play <song name> to play audio.\n\n"
+            "Send /help for a complete list of commands.",
         )
 
     # ── /help ───────────────────────────────────────────────────
     @bot.on_message(filters.command("help"))
     async def cmd_help(client: Client, message: Message):
         await message.reply_text(
-            "**🎵 Music Bot Commands**\n\n"
-            "▶️ `/play <url/query>` — Play audio\n"
-            "🎥 `/vplay <url/query>` — Play video\n"
-            "⏭ `/skip` — Skip current track\n"
-            "⏹ `/stop` — Stop & leave VC\n"
-            "⏸ `/pause` — Pause playback\n"
-            "▶️ `/resume` — Resume playback\n"
-            "📋 `/queue` — Show the queue\n"
-            "🔊 `/volume <1-200>` — Set volume\n"
-            "🔄 `/loop` — Toggle loop mode\n"
-            "🔀 `/shuffle` — Shuffle queue\n"
-            "🗑 `/clear` — Clear the queue",
+            "**Music Bot Commands**\n\n"
+            "• `/play <url/query>` — Play audio\n"
+            "• `/vplay <url/query>` — Play video\n"
+            "• `/skip` — Skip current track\n"
+            "• `/stop` — Stop playback and leave the voice chat\n"
+            "• `/pause` — Pause playback\n"
+            "• `/resume` — Resume playback\n"
+            "• `/queue` — View the queue\n"
+            "• `/volume <1-200>` — Set volume level\n"
+            "• `/loop` — Toggle loop mode\n"
+            "• `/shuffle` — Shuffle the queue\n"
+            "• `/clear` — Clear all upcoming tracks\n\n"
+            "If you experience any issues or need assistance, please contact the owner: @Ri5h11.",
             quote=True,
         )
 
@@ -77,20 +75,20 @@ def register_handlers(
 
         if not query:
             await message.reply_text(
-                "❌ **Please provide a song name or URL.**\n"
+                "Please provide a song name or URL.\n"
                 f"Example: `{'/' + ('vplay' if video else 'play')} alan walker faded`",
                 quote=True,
             )
             return
 
-        status_msg = await message.reply_text("🔍 **Searching…**", quote=True)
+        status_msg = await message.reply_text("Searching...", quote=True)
 
         # Extract stream info
         info = await YouTubeExtractor.extract_info(query, video=video)
         if not info:
             from pyrogram.errors import MessageNotModified
             try:
-                await status_msg.edit_text("❌ **No results found.** Try a different query.")
+                await status_msg.edit_text("No results found. Please try a different query.")
             except MessageNotModified:
                 pass
             return
@@ -124,8 +122,8 @@ def register_handlers(
                 queue.full_clear(chat_id)
                 log.error("Play failed: %s", exc)
                 await status_msg.edit_text(
-                    "❌ **Failed to play.** Make sure a voice chat is active "
-                    "and the userbot has permissions to join."
+                    "Playback failed. Make sure a voice chat is active "
+                    "and the userbot has permission to join."
                 )
         else:
             position = queue.add(chat_id, track)
@@ -145,7 +143,7 @@ def register_handlers(
         chat_id = message.chat.id
 
         if not queue.get_current(chat_id):
-            await message.reply_text("❌ **Nothing is playing.**", quote=True)
+            await message.reply_text("There is currently nothing playing.", quote=True)
             return
 
         next_track = queue.skip(chat_id)
@@ -159,16 +157,16 @@ def register_handlers(
                     video=video
                 )
                 await message.reply_text(
-                    f"⏭ **Skipped!**\n\n{build_now_playing(next_track, video=video)}",
+                    f"Skipped. Now playing:\n\n{build_now_playing(next_track, video=video)}",
                     quote=True,
                 )
             except Exception as exc:
                 log.error("Skip-play failed: %s", exc)
-                await message.reply_text("❌ **Failed to play next track.**", quote=True)
+                await message.reply_text("Failed to play the next track.", quote=True)
         else:
             await stream.stop(chat_id)
             queue.full_clear(chat_id)
-            await message.reply_text("⏭ **Skipped!** Queue is empty — left VC.", quote=True)
+            await message.reply_text("Skipped. The queue is now empty. Left the voice chat.", quote=True)
 
     # ── /stop ───────────────────────────────────────────────────
     @bot.on_message(filters.command("stop") & filters.group)
@@ -176,25 +174,25 @@ def register_handlers(
         chat_id = message.chat.id
         await stream.stop(chat_id)
         queue.full_clear(chat_id)
-        await message.reply_text("⏹ **Stopped playback and left voice chat.**", quote=True)
+        await message.reply_text("Stopped playback and left the voice chat.", quote=True)
 
     # ── /pause ──────────────────────────────────────────────────
     @bot.on_message(filters.command("pause") & filters.group)
     async def cmd_pause(client: Client, message: Message):
         ok = await stream.pause(message.chat.id)
         if ok:
-            await message.reply_text("⏸ **Paused.**", quote=True)
+            await message.reply_text("Playback paused.", quote=True)
         else:
-            await message.reply_text("❌ **Nothing to pause.**", quote=True)
+            await message.reply_text("There is nothing playing to pause.", quote=True)
 
     # ── /resume ─────────────────────────────────────────────────
     @bot.on_message(filters.command("resume") & filters.group)
     async def cmd_resume(client: Client, message: Message):
         ok = await stream.resume(message.chat.id)
         if ok:
-            await message.reply_text("▶️ **Resumed.**", quote=True)
+            await message.reply_text("Playback resumed.", quote=True)
         else:
-            await message.reply_text("❌ **Nothing to resume.**", quote=True)
+            await message.reply_text("There is nothing to resume.", quote=True)
 
     # ── /queue ──────────────────────────────────────────────────
     @bot.on_message(filters.command("queue") & filters.group)
@@ -205,7 +203,7 @@ def register_handlers(
         loop_mode = queue.get_loop_mode(chat_id)
 
         if not current and not upcoming:
-            await message.reply_text("📋 **Queue is empty.**", quote=True)
+            await message.reply_text("The queue is currently empty.", quote=True)
             return
 
         text = build_queue_message(upcoming, current, loop_mode, Config.MAX_QUEUE_DISPLAY)
@@ -217,7 +215,7 @@ def register_handlers(
         arg = _get_query(message)
         if not arg or not arg.isdigit():
             await message.reply_text(
-                "❌ **Usage:** `/volume <1-200>`\nExample: `/volume 150`",
+                "Usage: `/volume <1-200>`\nExample: `/volume 150`",
                 quote=True,
             )
             return
@@ -225,24 +223,24 @@ def register_handlers(
         vol = int(arg)
         if not (Config.MIN_VOLUME <= vol <= Config.MAX_VOLUME):
             await message.reply_text(
-                f"❌ Volume must be between **{Config.MIN_VOLUME}** and **{Config.MAX_VOLUME}**.",
+                f"Volume must be between {Config.MIN_VOLUME} and {Config.MAX_VOLUME}.",
                 quote=True,
             )
             return
 
         ok = await stream.set_volume(message.chat.id, vol)
         if ok:
-            await message.reply_text(f"🔊 Volume set to **{vol}%**", quote=True)
+            await message.reply_text(f"Volume set to {vol}%.", quote=True)
         else:
-            await message.reply_text("❌ **Failed to change volume.**", quote=True)
+            await message.reply_text("Failed to change the volume.", quote=True)
 
     # ── /loop ───────────────────────────────────────────────────
     @bot.on_message(filters.command("loop") & filters.group)
     async def cmd_loop(client: Client, message: Message):
         mode = queue.toggle_loop(message.chat.id)
-        labels = {"off": "Off ➡️", "single": "🔂 Single Track", "all": "🔁 Entire Queue"}
+        labels = {"off": "Off", "single": "Single Track", "all": "Entire Queue"}
         await message.reply_text(
-            f"🔄 Loop mode: **{labels.get(mode.value, 'Off')}**", quote=True
+            f"Loop mode set to: **{labels.get(mode.value, 'Off')}**", quote=True
         )
 
     # ── /shuffle ────────────────────────────────────────────────
@@ -250,13 +248,13 @@ def register_handlers(
     async def cmd_shuffle(client: Client, message: Message):
         chat_id = message.chat.id
         if queue.get_length(chat_id) < 2:
-            await message.reply_text("❌ **Not enough tracks to shuffle.**", quote=True)
+            await message.reply_text("There are not enough tracks in the queue to shuffle.", quote=True)
             return
         queue.shuffle(chat_id)
-        await message.reply_text("🔀 **Queue shuffled!**", quote=True)
+        await message.reply_text("Queue shuffled.", quote=True)
 
     # ── /clear ──────────────────────────────────────────────────
     @bot.on_message(filters.command("clear") & filters.group)
     async def cmd_clear(client: Client, message: Message):
         queue.clear(message.chat.id)
-        await message.reply_text("🗑 **Queue cleared.** Current track still playing.", quote=True)
+        await message.reply_text("Upcoming queue cleared. The current track will continue playing.", quote=True)
