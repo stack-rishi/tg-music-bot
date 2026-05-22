@@ -3,7 +3,7 @@
 import logging
 
 from pyrogram import Client, filters
-from pyrogram.types import Message
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 from config import Config
 from player.queue import QueueManager
@@ -42,37 +42,51 @@ def register_handlers(
             quote=True,
         )
 
+    HELP_TEXT = (
+        "⚡ **GlissStream Command Console**\n\n"
+        "• `/play <query/url>` — Stream high-fidelity audio\n"
+        "• `/vplay <query/url>` — Stream HD video (up to 720p)\n"
+        "• `/skip` — Advance to the next track in the queue\n"
+        "• `/stop` — Terminate the current stream and disconnect\n"
+        "• `/pause` — Suspend playback temporarily\n"
+        "• `/resume` — Continue playback of the suspended stream\n"
+        "• `/queue` — View all upcoming tracks and current mode\n"
+        "• `/volume <1-200>` — Calibrate stream volume\n"
+        "• `/loop` — Cycle loop settings (Single / Queue / Off)\n"
+        "• `/shuffle` — Randomize upcoming tracks\n"
+        "• `/clear` — Wipe the upcoming queue\n\n"
+        "🔧 **Support & Operations:**\n"
+        "For technical issues or assistance, contact the systems owner: @Ri5h11."
+    )
+
     @bot.on_message(filters.command("start") & filters.private)
     async def cmd_start_private(client: Client, message: Message):
-        await message.reply_text(
-            "Hello! I am **GlissStream**, an advanced audio and video streaming client designed for Telegram group calls.\n\n"
-            "**How to get started:**\n"
-            "1. Add me to your group chat.\n"
-            "2. Join or start the group's video/voice chat.\n"
-            "3. Use `/play <song/link>` to start streaming instantly.\n\n"
-            "Send /help to view the full command console.",
+        bot_me = await client.get_me()
+        bot_username = bot_me.username
+        
+        caption = (
+            f"Hey {message.from_user.first_name if message.from_user else 'there'},\n"
+            f"This is **GlissStream** !\n\n"
+            f"A music player bot with some awesome and useful features.\n\n"
+            f"_Click on the help button for more info._"
+        )
+        
+        reply_markup = InlineKeyboardMarkup([
+            [InlineKeyboardButton("Add me to your group", url=f"https://t.me/{bot_username}?startgroup=true")],
+            [InlineKeyboardButton("Help", callback_data="cb_help")],
+            [InlineKeyboardButton("Support", url="https://t.me/Ri5h11"), InlineKeyboardButton("Source", url="https://github.com/")],
+        ])
+        
+        await message.reply_photo(
+            photo="catfortg.jpeg",
+            caption=caption,
+            reply_markup=reply_markup
         )
 
     # ── /help ───────────────────────────────────────────────────
     @bot.on_message(filters.command("help"))
     async def cmd_help(client: Client, message: Message):
-        await message.reply_text(
-            "⚡ **GlissStream Command Console**\n\n"
-            "• `/play <query/url>` — Stream high-fidelity audio\n"
-            "• `/vplay <query/url>` — Stream HD video (up to 720p)\n"
-            "• `/skip` — Advance to the next track in the queue\n"
-            "• `/stop` — Terminate the current stream and disconnect\n"
-            "• `/pause` — Suspend playback temporarily\n"
-            "• `/resume` — Continue playback of the suspended stream\n"
-            "• `/queue` — View all upcoming tracks and current mode\n"
-            "• `/volume <1-200>` — Calibrate stream volume\n"
-            "• `/loop` — Cycle loop settings (Single / Queue / Off)\n"
-            "• `/shuffle` — Randomize upcoming tracks\n"
-            "• `/clear` — Wipe the upcoming queue\n\n"
-            "🔧 **Support & Operations:**\n"
-            "For technical issues or assistance, contact the systems owner: @Ri5h11.",
-            quote=True,
-        )
+        await message.reply_text(HELP_TEXT, quote=True)
 
     # ── /play & /vplay ──────────────────────────────────────────
     async def _handle_play(message: Message, video: bool = False):
@@ -272,8 +286,40 @@ def register_handlers(
     # ── Inline Callbacks ────────────────────────────────────────
     @bot.on_callback_query(filters.regex(r"^cb_"))
     async def handle_callbacks(client: Client, callback_query):
-        chat_id = callback_query.message.chat.id
         data = callback_query.data
+
+        if data == "cb_help":
+            await callback_query.edit_message_caption(
+                caption=HELP_TEXT,
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("Back", callback_data="cb_start")]
+                ])
+            )
+            await callback_query.answer()
+            return
+            
+        elif data == "cb_start":
+            bot_me = await client.get_me()
+            bot_username = bot_me.username
+            caption = (
+                f"Hey {callback_query.from_user.first_name if callback_query.from_user else 'there'},\n"
+                f"This is **GlissStream** !\n\n"
+                f"A music player bot with some awesome and useful features.\n\n"
+                f"_Click on the help button for more info._"
+            )
+            reply_markup = InlineKeyboardMarkup([
+                [InlineKeyboardButton("Add me to your group", url=f"https://t.me/{bot_username}?startgroup=true")],
+                [InlineKeyboardButton("Help", callback_data="cb_help")],
+                [InlineKeyboardButton("Support", url="https://t.me/Ri5h11"), InlineKeyboardButton("Source", url="https://github.com/")],
+            ])
+            await callback_query.edit_message_caption(
+                caption=caption,
+                reply_markup=reply_markup
+            )
+            await callback_query.answer()
+            return
+
+        chat_id = callback_query.message.chat.id
 
         if data == "cb_pause":
             ok = await stream.pause(chat_id)
