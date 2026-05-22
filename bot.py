@@ -36,10 +36,25 @@ def register_handlers(
     # ── /start ──────────────────────────────────────────────────
     @bot.on_message(filters.command("start") & filters.group)
     async def cmd_start(client: Client, message: Message):
-        await message.reply_text(
-            "Hello! I am **GlissStream**, a high-performance audio and video streaming system configured for group calls.\n\n"
-            "Use /help to view the system command console.",
-            quote=True,
+        bot_me = await client.get_me()
+        bot_username = bot_me.username
+        
+        caption = (
+            f"Hey {message.from_user.first_name if message.from_user else 'there'},\n"
+            f"This is **GlissStream** !\n\n"
+            f"A music player bot with some awesome and useful features.\n\n"
+            f"_Click on the help button for more info._"
+        )
+        
+        reply_markup = InlineKeyboardMarkup([
+            [InlineKeyboardButton("Help", callback_data="cb_help")],
+            [InlineKeyboardButton("Support", url="https://t.me/Ri5h11"), InlineKeyboardButton("Source", url="https://github.com/")],
+        ])
+        
+        await message.reply_photo(
+            photo="catfortg.jpeg",
+            caption=caption,
+            reply_markup=reply_markup
         )
 
     HELP_TEXT = (
