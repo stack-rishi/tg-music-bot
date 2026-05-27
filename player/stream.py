@@ -31,13 +31,13 @@ class StreamManager:
             media = MediaStream(
                 stream_url,
                 audio_path=audio_url if audio_url else None,
-                audio_parameters=AudioQuality.STUDIO,
+                audio_parameters=AudioQuality.HIGH,
                 video_parameters=VideoQuality.HD_720p,
             )
         else:
             media = MediaStream(
                 stream_url,
-                audio_parameters=AudioQuality.STUDIO,
+                audio_parameters=AudioQuality.HIGH,
                 video_flags=MediaStream.Flags.IGNORE,
             )
 

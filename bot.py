@@ -43,7 +43,7 @@ def register_handlers(
             f"Hey {message.from_user.first_name if message.from_user else 'there'},\n"
             f"This is **GlissStream** !\n\n"
             f"A music player bot with some awesome and useful features.\n\n"
-            f"_Click on the help button for more info._"
+            f"Click on the help button for more info."
         )
         
         reply_markup = InlineKeyboardMarkup([
