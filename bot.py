@@ -36,6 +36,9 @@ def register_handlers(
     # ── /start ──────────────────────────────────────────────────
     @bot.on_message(filters.command("start") & filters.group)
     async def cmd_start(client: Client, message: Message):
+        bot_me = await client.get_me()
+        bot_username = bot_me.username
+        
         caption = (
             f"Hey {message.from_user.first_name if message.from_user else 'there'},\n"
             f"This is **GlissStream** !\n\n"
@@ -44,6 +47,7 @@ def register_handlers(
         )
         
         reply_markup = InlineKeyboardMarkup([
+            [InlineKeyboardButton("Add me to your group", url=f"https://t.me/{bot_username}?startgroup=true")],
             [InlineKeyboardButton("Help", callback_data="cb_help")],
             [InlineKeyboardButton("Support", url="https://t.me/Ri5h11"), InlineKeyboardButton("Source", url="https://github.com/")],
         ])
@@ -320,17 +324,11 @@ def register_handlers(
                 f"A music player bot with some awesome and useful features.\n\n"
                 f"_Click on the help button for more info._"
             )
-            if is_private:
-                reply_markup = InlineKeyboardMarkup([
-                    [InlineKeyboardButton("Add me to your group", url=f"https://t.me/{bot_username}?startgroup=true")],
-                    [InlineKeyboardButton("Help", callback_data="cb_help")],
-                    [InlineKeyboardButton("Support", url="https://t.me/Ri5h11"), InlineKeyboardButton("Source", url="https://github.com/")],
-                ])
-            else:
-                reply_markup = InlineKeyboardMarkup([
-                    [InlineKeyboardButton("Help", callback_data="cb_help")],
-                    [InlineKeyboardButton("Support", url="https://t.me/Ri5h11"), InlineKeyboardButton("Source", url="https://github.com/")],
-                ])
+            reply_markup = InlineKeyboardMarkup([
+                [InlineKeyboardButton("Add me to your group", url=f"https://t.me/{bot_username}?startgroup=true")],
+                [InlineKeyboardButton("Help", callback_data="cb_help")],
+                [InlineKeyboardButton("Support", url="https://t.me/Ri5h11"), InlineKeyboardButton("Source", url="https://github.com/")],
+            ])
             await callback_query.edit_message_caption(
                 caption=caption,
                 reply_markup=reply_markup
