@@ -136,7 +136,8 @@ def _download(url: str, video: bool) -> dict | None:
         # which eliminates video lag and stuttering on low-end servers.
         fmt = "bestvideo[height<=720][vcodec^=avc1]+bestaudio/bestvideo[height<=720]+bestaudio/best[height<=720]/best"
     else:
-        fmt = "bestaudio*/best"
+        # Prioritize high-bitrate M4A (AAC) or WebM (Opus) for Spotify-tier audio quality
+        fmt = "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best"
 
     ydl_opts_meta = {
         **_BASE_YDL_OPTS,

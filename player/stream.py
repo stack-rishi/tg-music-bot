@@ -31,14 +31,16 @@ class StreamManager:
             media = MediaStream(
                 stream_url,
                 audio_path=audio_url if audio_url else None,
-                audio_parameters=AudioQuality.HIGH,
+                audio_parameters=AudioQuality.STUDIO,
                 video_parameters=VideoQuality.HD_720p,
+                ffmpeg_parameters="-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
             )
         else:
             media = MediaStream(
                 stream_url,
-                audio_parameters=AudioQuality.HIGH,
+                audio_parameters=AudioQuality.STUDIO,
                 video_flags=MediaStream.Flags.IGNORE,
+                ffmpeg_parameters="-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
             )
 
         try:
