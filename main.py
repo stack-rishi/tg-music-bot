@@ -197,16 +197,22 @@ async def main() -> None:
     # ── Auto-advance callback ──
     async def on_track_end(chat_id: int) -> None:
         """Called when a stream finishes — play next track or leave VC."""
-        # Clean up the just-finished local temp file,
-        # BUT only if loop mode is not SINGLE (since SINGLE replays the same file)
         from player.queue import LoopMode
-        prev = queue_mgr.get_current(chat_id)
+        from utils.youtube import _cleanup
+
+        # Grab the track that just finished BEFORE advancing
+        prev_track = queue_mgr.get_current(chat_id)
         loop_mode = queue_mgr.get_loop_mode(chat_id)
-        if prev and prev.get("local_file") and loop_mode != LoopMode.SINGLE.value:
-            from utils.youtube import _cleanup
-            _cleanup(prev["stream_url"])
 
         next_track = queue_mgr.advance(chat_id)
+
+        # Clean up the old track's local file ONLY if it is not being reused.
+        # In SINGLE loop mode, advance() returns the same track — don't delete.
+        # In ALL loop mode, advance() re-appends it to the queue — don't delete.
+        if prev_track and prev_track.get("local_file"):
+            if loop_mode not in (LoopMode.SINGLE.value, LoopMode.ALL.value):
+                _cleanup(prev_track.get("stream_url", ""))
+
         if next_track:
             try:
                 video = next_track.get("video", False)

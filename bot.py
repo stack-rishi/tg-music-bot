@@ -36,9 +36,6 @@ def register_handlers(
     # ── /start ──────────────────────────────────────────────────
     @bot.on_message(filters.command("start") & filters.group)
     async def cmd_start(client: Client, message: Message):
-        bot_me = await client.get_me()
-        bot_username = bot_me.username
-        
         caption = (
             f"Hey {message.from_user.first_name if message.from_user else 'there'},\n"
             f"This is **GlissStream** !\n\n"
@@ -314,6 +311,7 @@ def register_handlers(
             return
             
         elif data == "cb_start":
+            is_private = callback_query.message.chat.type == "private"
             bot_me = await client.get_me()
             bot_username = bot_me.username
             caption = (
@@ -322,11 +320,17 @@ def register_handlers(
                 f"A music player bot with some awesome and useful features.\n\n"
                 f"_Click on the help button for more info._"
             )
-            reply_markup = InlineKeyboardMarkup([
-                [InlineKeyboardButton("Add me to your group", url=f"https://t.me/{bot_username}?startgroup=true")],
-                [InlineKeyboardButton("Help", callback_data="cb_help")],
-                [InlineKeyboardButton("Support", url="https://t.me/Ri5h11"), InlineKeyboardButton("Source", url="https://github.com/")],
-            ])
+            if is_private:
+                reply_markup = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("Add me to your group", url=f"https://t.me/{bot_username}?startgroup=true")],
+                    [InlineKeyboardButton("Help", callback_data="cb_help")],
+                    [InlineKeyboardButton("Support", url="https://t.me/Ri5h11"), InlineKeyboardButton("Source", url="https://github.com/")],
+                ])
+            else:
+                reply_markup = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("Help", callback_data="cb_help")],
+                    [InlineKeyboardButton("Support", url="https://t.me/Ri5h11"), InlineKeyboardButton("Source", url="https://github.com/")],
+                ])
             await callback_query.edit_message_caption(
                 caption=caption,
                 reply_markup=reply_markup
@@ -388,13 +392,25 @@ def register_handlers(
             else:
                 await stream.stop(chat_id)
                 queue.full_clear(chat_id)
-                await callback_query.message.edit_text("Skipped. The queue is now empty. Disconnected from voice chat.")
+                try:
+                    await callback_query.message.edit_text(
+                        "Skipped. The queue is now empty. Disconnected from voice chat.",
+                        reply_markup=None
+                    )
+                except Exception:
+                    pass
                 await callback_query.answer("Queue empty. Disconnected.")
 
         elif data == "cb_stop":
             await stream.stop(chat_id)
             queue.full_clear(chat_id)
-            await callback_query.message.edit_text("Stopped playback and left the voice chat.")
+            try:
+                await callback_query.message.edit_text(
+                    "Stopped playback and left the voice chat.",
+                    reply_markup=None
+                )
+            except Exception:
+                pass
             await callback_query.answer("Playback stopped.")
 
         elif data == "cb_loop":

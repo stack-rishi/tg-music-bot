@@ -31,7 +31,7 @@ def format_duration(seconds: int | float | None) -> str:
 
     Examples: 245 → '4:05', 3661 → '1:01:01', None → 'Live'
     """
-    if not seconds:
+    if seconds is None:
         return "Live"
     seconds = int(seconds)
     hrs, remainder = divmod(seconds, 3600)
@@ -60,7 +60,7 @@ def build_now_playing(track: dict, video: bool = False) -> str:
         f"🔊 **Now Playing on GlissStream**",
         "",
         f"• **Title:** [{truncate(title, 50)}]({url})" if url else f"• **Title:** {truncate(title, 50)}",
-        f"• **Format:** {mode} (720p HD / 48kHz Stereo)",
+        f"• **Format:** {mode} (720p HD / 48kHz Stereo)" if video else f"• **Format:** {mode} (48kHz Stereo)",
         f"• **Duration:** `{duration}`",
         f"• **Source:** {uploader}",
     ]
