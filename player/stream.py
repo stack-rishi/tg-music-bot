@@ -33,14 +33,12 @@ class StreamManager:
                 audio_path=audio_url if audio_url else None,
                 audio_parameters=AudioQuality.STUDIO,
                 video_parameters=VideoQuality.HD_720p,
-                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"},
             )
         else:
             media = MediaStream(
                 stream_url,
                 audio_parameters=AudioQuality.STUDIO,
                 video_flags=MediaStream.Flags.IGNORE,
-                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"},
             )
 
         try:
