@@ -32,10 +32,9 @@ _BASE_YDL_OPTS: dict = {
     "geo_bypass": True,
 
     # ── Client order matters:
-    # Putting mweb first as per LyriFusion architecture to support cookies
     "extractor_args": {
         "youtube": {
-            "player_client": ["mweb", "tv"],
+            "player_client": ["web_embedded", "tv"],
         },
         "youtubepot-bgutilhttp": {
             "base_url": ["http://127.0.0.1:4416"]
@@ -123,14 +122,7 @@ class YouTubeExtractor:
 
 
 def _download(url: str, video: bool) -> dict | None:
-    """Download or extract a track.
-    
-    If track is under 15 minutes, download to /tmp (highest stability).
-    If track is 15 minutes or longer, return direct HTTP stream URLs (disk-safe, instant play).
-    """
-    uid = uuid.uuid4().hex
-    out_template = os.path.join(_TMP_DIR, f"musicbot_{uid}.%(ext)s")
-
+    """Extract direct streaming URLs for all tracks (100% direct HTTP streaming)."""
     if video:
         # Prioritize H264 (avc1) to drastically reduce ffmpeg decoding overhead
         # which eliminates video lag and stuttering on low-end servers.
@@ -145,7 +137,6 @@ def _download(url: str, video: bool) -> dict | None:
     }
 
     try:
-        # Step 1: Extract metadata first (no download)
         log.info("Extracting metadata for %r", url)
         with yt_dlp.YoutubeDL(ydl_opts_meta) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -164,93 +155,42 @@ def _download(url: str, video: bool) -> dict | None:
         duration = video_info.get("duration", 0)
         webpage_url = video_info.get("webpage_url", url)
 
-        # Step 2: Determine strategy based on duration
-        # Direct stream if >= 15 minutes (900 seconds)
-        is_large_media = duration >= 900
+        stream_url = None
+        audio_url = None
 
-        if is_large_media:
-            log.info("Large media detected (%ds) — using direct HTTP streaming", duration)
-            
-            stream_url = None
-            audio_url = None
-
-            if video:
-                req_formats = video_info.get("requested_formats")
-                if req_formats and len(req_formats) >= 2:
-                    for f in req_formats:
-                        if f.get("vcodec") != "none" and f.get("acodec") == "none":
-                            stream_url = f["url"]
-                        elif f.get("acodec") != "none" and f.get("vcodec") == "none":
-                            audio_url = f["url"]
-                    if not stream_url or not audio_url:
-                        stream_url = req_formats[0]["url"]
-                        audio_url = req_formats[1]["url"]
-                else:
-                    stream_url = video_info.get("url")
-            else:
-                req_formats = video_info.get("requested_formats")
-                if req_formats:
+        if video:
+            req_formats = video_info.get("requested_formats")
+            if req_formats and len(req_formats) >= 2:
+                for f in req_formats:
+                    if f.get("vcodec") != "none" and f.get("acodec") == "none":
+                        stream_url = f["url"]
+                    elif f.get("acodec") != "none" and f.get("vcodec") == "none":
+                        audio_url = f["url"]
+                if not stream_url or not audio_url:
                     stream_url = req_formats[0]["url"]
-                else:
-                    stream_url = video_info.get("url")
+                    audio_url = req_formats[1]["url"]
+            else:
+                stream_url = video_info.get("url")
+        else:
+            req_formats = video_info.get("requested_formats")
+            if req_formats:
+                stream_url = req_formats[0]["url"]
+            else:
+                stream_url = video_info.get("url")
 
-            if not stream_url:
-                log.error("Failed to extract stream URL for %r", webpage_url)
-                return None
-
-            return {
-                "title": video_info.get("title", "Unknown"),
-                "duration": duration,
-                "stream_url": stream_url,
-                "audio_url": audio_url or "",
-                "thumbnail": video_info.get("thumbnail", ""),
-                "url": webpage_url,
-                "uploader": video_info.get("uploader", "Unknown"),
-                "local_file": False,
-            }
-
-        # For short tracks, proceed to download for stability
-        log.info("Short track detected (%ds) — downloading for high-stability playback", duration)
-        ydl_opts_download = {
-            **_BASE_YDL_OPTS,
-            "format": fmt,
-            "outtmpl": out_template,
-            "postprocessors": [] if video else [
-                {
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": "320",
-                }
-            ],
-        }
-
-        # Download the specific resolved video webpage_url to avoid re-searching
-        with yt_dlp.YoutubeDL(ydl_opts_download) as ydl:
-            download_info = ydl.extract_info(webpage_url, download=True)
-
-        if not download_info:
-            return None
-
-        # Find downloaded file
-        downloaded = None
-        for fname in os.listdir(_TMP_DIR):
-            if fname.startswith(f"musicbot_{uid}"):
-                downloaded = os.path.join(_TMP_DIR, fname)
-                break
-
-        if not downloaded or not os.path.exists(downloaded):
-            log.error("Downloaded file not found for %r", webpage_url)
+        if not stream_url:
+            log.error("Failed to extract stream URL for %r", webpage_url)
             return None
 
         return {
-            "title": download_info.get("title", "Unknown"),
+            "title": video_info.get("title", "Unknown"),
             "duration": duration,
-            "stream_url": downloaded,
-            "audio_url": "",
-            "thumbnail": download_info.get("thumbnail", ""),
+            "stream_url": stream_url,
+            "audio_url": audio_url or "",
+            "thumbnail": video_info.get("thumbnail", ""),
             "url": webpage_url,
-            "uploader": download_info.get("uploader", "Unknown"),
-            "local_file": True,
+            "uploader": video_info.get("uploader", "Unknown"),
+            "local_file": False,
         }
 
     except Exception as e:
