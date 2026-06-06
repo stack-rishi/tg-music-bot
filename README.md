@@ -1,5 +1,4 @@
 ---
-
 title: Telegram Music Bot
 emoji: 🎵
 colorFrom: purple
@@ -7,7 +6,7 @@ colorTo: blue
 sdk: docker
 app_port: 7860
 pinned: false
--------------
+---
 
 # 🎵 Telegram VC Music Bot
 
@@ -92,19 +91,19 @@ Stream music and videos directly into Telegram Voice Chats with queue management
 
 ## 📜 Commands
 
-| Command              | Description                |
-| -------------------- | -------------------------- |
-| `/play <song/url>`   | Play audio in voice chat   |
-| `/vplay <video/url>` | Play video in voice chat   |
-| `/skip`              | Skip current track         |
-| `/pause`             | Pause playback             |
-| `/resume`            | Resume playback            |
-| `/stop`              | Stop playback and leave VC |
-| `/queue`             | Show current queue         |
-| `/volume <1-200>`    | Set playback volume        |
-| `/loop`              | Toggle loop mode           |
-| `/shuffle`           | Shuffle queue              |
-| `/clear`             | Clear upcoming tracks      |
+| Command | Description |
+|----------|------------|
+| `/play <song/url>` | Play audio in voice chat |
+| `/vplay <video/url>` | Play video in voice chat |
+| `/skip` | Skip current track |
+| `/pause` | Pause playback |
+| `/resume` | Resume playback |
+| `/stop` | Stop playback and leave VC |
+| `/queue` | Show current queue |
+| `/volume <1-200>` | Set playback volume |
+| `/loop` | Toggle loop mode |
+| `/shuffle` | Shuffle queue |
+| `/clear` | Clear upcoming tracks |
 
 ---
 
@@ -343,13 +342,13 @@ Telegram Voice Chat
 
 ## 🔧 Troubleshooting
 
-| Issue                     | Solution                          |
-| ------------------------- | --------------------------------- |
-| No module named pytgcalls | Install `py-tgcalls[pyrogram]`    |
-| FFmpeg not found          | Install FFmpeg and add it to PATH |
-| Userbot cannot join VC    | Add userbot and grant permissions |
-| FloodWait errors          | Wait for Telegram cooldown        |
-| Invalid SESSION_STRING    | Generate a new session string     |
+| Issue | Solution |
+|--------|----------|
+| No module named pytgcalls | Install `py-tgcalls[pyrogram]` |
+| FFmpeg not found | Install FFmpeg and add it to PATH |
+| Userbot cannot join VC | Add userbot and grant permissions |
+| FloodWait errors | Wait for Telegram cooldown |
+| Invalid SESSION_STRING | Generate a new session string |
 
 ---
 
