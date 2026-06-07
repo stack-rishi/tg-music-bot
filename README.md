@@ -1,17 +1,8 @@
----
-title: Telegram Music Bot
-emoji: 🎵
-colorFrom: purple
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 <div align="center">
 
 # 🎵 GlissStream Telegram VC Bot
 
+[![Try the Bot](https://img.shields.io/badge/Telegram-Try%20The%20Bot%20🚀-blue?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/ChatpataAlooBot)
 [![GitHub Stars](https://img.shields.io/github/stars/stack-rishi/tg-music-bot?style=for-the-badge&color=ffd700)](https://github.com/stack-rishi/tg-music-bot/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/stack-rishi/tg-music-bot?style=for-the-badge&color=8a2be2)](https://github.com/stack-rishi/tg-music-bot/network/members)
 [![Python Version](https://img.shields.io/badge/Python-3.10%20%7C%203.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
@@ -19,6 +10,8 @@ pinned: false
 [![Support Group](https://img.shields.io/badge/Telegram-Support-26A69A?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Ri5h11)
 
 A state-of-the-art, high-performance Telegram Voice Chat music and video player bot. Seamlessly stream audio and video with instant startup, zero local disk footprint, and Spotify-tier audio quality.
+
+[⚡ **Try the Live Bot on Telegram!** ⚡](https://t.me/ChatpataAlooBot)
 
 [Report Bug](https://github.com/stack-rishi/tg-music-bot/issues/new?template=bug_report.md) · [Request Feature](https://github.com/stack-rishi/tg-music-bot/issues/new?template=feature_request.md)
 
