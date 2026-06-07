@@ -8,377 +8,164 @@ app_port: 7860
 pinned: false
 ---
 
-# 🎵 Telegram VC Music Bot
+<div align="center">
 
-<p align="center">
-  <img src="catforg.jpeg" width="220" alt="Telegram Music Bot">
-</p>
+# 🎵 GlissStream Telegram VC Bot
 
-<h3 align="center">
-High-Performance Telegram Voice Chat Music & Video Streaming Bot
-</h3>
+[![GitHub Stars](https://img.shields.io/github/stars/stack-rishi/tg-music-bot?style=for-the-badge&color=ffd700)](https://github.com/stack-rishi/tg-music-bot/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/stack-rishi/tg-music-bot?style=for-the-badge&color=8a2be2)](https://github.com/stack-rishi/tg-music-bot/network/members)
+[![Python Version](https://img.shields.io/badge/Python-3.10%20%7C%203.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![License](https://img.shields.io/github/license/stack-rishi/tg-music-bot?style=for-the-badge&color=2ea44f)](LICENSE)
+[![Support Group](https://img.shields.io/badge/Telegram-Support-26A69A?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Ri5h11)
 
-<p align="center">
-Built with Pyrogram • PyTgCalls • FFmpeg • yt-dlp
-</p>
+A state-of-the-art, high-performance Telegram Voice Chat music and video player bot. Seamlessly stream audio and video with instant startup, zero local disk footprint, and Spotify-tier audio quality.
 
-<p align="center">
-Stream music and videos directly into Telegram Voice Chats with queue management, looping, volume controls, and Docker deployment support.
-</p>
+[Report Bug](https://github.com/stack-rishi/tg-music-bot/issues/new?template=bug_report.md) · [Request Feature](https://github.com/stack-rishi/tg-music-bot/issues/new?template=feature_request.md)
+
+</div>
 
 ---
 
-## ⭐ Features At A Glance
+## ⚡ Highlights & Key Advantages
 
-* 🎵 YouTube Music Playback
-* 🎥 Video Streaming
-* 📋 Smart Queue System
-* 🔄 Loop & Shuffle Support
-* 🔊 Volume Controls
-* 🐳 Docker Ready
-* 🖥 VPS Ready
-* ⚡ Lightweight & Fast
+*   🚀 **100% Direct HTTP Streaming**: Streams YouTube media directly to Telegram voice chats without downloading files locally. Disconnects disk usage concerns entirely and starts playback in **under 2 seconds**.
+*   🔊 **Spotify-Tier Audio Quality**: Utilizes PyTgCalls `AudioQuality.HIGH` (48kHz stereo, maximum allowable WebRTC bitrate) for crystal-clear sound, avoiding muddy compression.
+*   🎥 **HD Video Streaming**: Supports streaming HD video (up to 720p at 30fps) inside group calls with automatic hardware-friendly transcoding priorities.
+*   🕹️ **Interactive Control Panel**: Controls streams directly with beautiful inline keyboard buttons (Play, Pause, Skip, Loop, Volume) without typing commands.
+*   🛡️ **Premium Bypass Stack**: Includes a built-in Proof-of-Origin (PO) Token server, portable Node.js runtime, and JavaScript Signature challenge solver to bypass YouTube's anti-bot restrictions and 403 blocks.
+*   ♻️ **Robust Fallback Engine**: If YouTube fails completely, automatically falls back to alternative streaming platforms (e.g., SoundCloud) to keep the music playing.
 
 ---
 
-## ✨ Features
+## 🎮 Command Console
 
-### 🎶 Music Streaming
-
-* Play music from YouTube URLs
-* Search songs by name
-* High-quality audio playback
-* Fast extraction using yt-dlp
-* Automatic queue progression
-
-### 🎥 Video Streaming
-
-* Stream YouTube videos directly in Voice Chats
-* Supports URLs and search queries
-* Smooth playback via FFmpeg
-
-### 📋 Queue Management
-
-* Per-chat queue system
-* Automatic next-track playback
-* View current queue
-* Shuffle queue
-* Clear queue
-
-### 🎛 Playback Controls
-
-* Pause & Resume
-* Skip tracks
-* Stop playback
-* Leave Voice Chat
-* Loop current song
-* Loop entire queue
-
-### 🔊 Audio Controls
-
-* Adjustable volume (1–200%)
-* Real-time volume updates
-
-### 🚀 Production Ready
-
-* Docker deployment
-* VPS deployment
-* Systemd support
-* Automatic restart support
-* Optimized architecture
+| Command | Action | Inline Control Available |
+| :--- | :--- | :---: |
+| `/play <url/query>` | Stream high-fidelity audio in group VC | Yes |
+| `/vplay <url/query>` | Stream HD video (720p) in group VC | Yes |
+| `/skip` | Advance to the next track in queue | Yes |
+| `/pause` | Suspend playback temporarily | Yes |
+| `/resume` | Continue playback of the suspended stream | Yes |
+| `/stop` | Terminate the stream and disconnect | Yes |
+| `/queue` | View upcoming tracks and current mode | Yes |
+| `/volume <1-200>` | Calibrate stream volume | No |
+| `/loop` | Cycle loop settings (Single / Queue / Off) | Yes |
+| `/shuffle` | Randomize upcoming tracks | Yes |
+| `/clear` | Wipe the upcoming queue | No |
 
 ---
 
-## 📜 Commands
+## 🚀 Quick Start & Installation
 
-| Command | Description |
-|----------|------------|
-| `/play <song/url>` | Play audio in voice chat |
-| `/vplay <video/url>` | Play video in voice chat |
-| `/skip` | Skip current track |
-| `/pause` | Pause playback |
-| `/resume` | Resume playback |
-| `/stop` | Stop playback and leave VC |
-| `/queue` | Show current queue |
-| `/volume <1-200>` | Set playback volume |
-| `/loop` | Toggle loop mode |
-| `/shuffle` | Shuffle queue |
-| `/clear` | Clear upcoming tracks |
+### 1. System Prerequisites
+Before deploying, make sure you have:
+*   **Python 3.10 or 3.11**
+*   **FFmpeg** installed and added to your system's `PATH`.
 
----
-
-## 📁 Project Structure
-
-```text
-tg-music-bot/
-├── player/
-├── utils/
-├── .env.example
-├── .gitignore
-├── Dockerfile
-├── README.md
-├── bot.py
-├── config.py
-├── main.py
-├── requirements.txt
-├── session_generator.py
-├── userbot.py
-└── catforg.jpeg
-```
-
----
-
-## 🛠 Requirements
-
-* Python 3.10+
-* FFmpeg
-* Telegram Bot Token
-* Telegram API ID
-* Telegram API Hash
-* Telegram User Session String
-
----
-
-## ⚡ Quick Start
-
-### Clone Repository
-
+### 2. Installation Steps
+Clone the repository and install the dependencies:
 ```bash
 git clone https://github.com/stack-rishi/tg-music-bot.git
 cd tg-music-bot
-```
-
-### Install Dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
-### Configure Environment
+### 3. Generate userbot session string
+Run the interactive helper script on your local machine to authenticate the userbot client:
+```bash
+python session_generator.py
+```
+Copy the long `SESSION_STRING` printed at the end of the script.
+> ⚠️ **IMPORTANT**: Never share your session string. Anyone who obtains it can fully control the corresponding Telegram account.
 
-Create a `.env` file:
-
+### 4. Configuration
+Duplicate `.env.example` as `.env` and fill in your details:
 ```env
 API_ID=12345678
-API_HASH=your_api_hash
-BOT_TOKEN=your_bot_token
-SESSION_STRING=your_session_string
+API_HASH=your_api_hash_here
+BOT_TOKEN=123456:ABC-DEF1234...
+SESSION_STRING=your_session_string_here
 SUDO_USERS=123456789
 ```
 
-### Start Bot
-
+### 5. Launch the Bot
 ```bash
 python main.py
 ```
 
 ---
 
-## 🔑 Generate Session String
+## 🛠️ Deploying 24/7 on Linux VPS
 
-Run:
-
+### Option A: Using tmux (Easiest)
+Create a persistent tmux session to run the bot in the background:
 ```bash
-python session_generator.py
+tmux new -s musicbot
+source .venv/bin/activate
+python main.py
+# Press Ctrl+B, then D to detach safely from tmux
 ```
-
-You'll be prompted for:
-
-* API ID
-* API Hash
-* Phone Number
-* Telegram Verification Code
-
-After successful login, copy the generated:
-
-```text
-SESSION_STRING
-```
-
-> ⚠️ Never share your SESSION_STRING. It provides access to your Telegram account.
-
----
-
-## 🎬 Installing FFmpeg
-
-### Ubuntu / Debian
-
+To re-attach later:
 ```bash
-sudo apt update
-sudo apt install ffmpeg -y
+tmux attach -t musicbot
 ```
 
-### macOS
-
-```bash
-brew install ffmpeg
-```
-
-### Windows
-
-1. Download FFmpeg
-2. Extract the archive
-3. Add the `bin` folder to your PATH
-
-Verify installation:
-
-```bash
-ffmpeg -version
-```
-
----
-
-## 📖 Usage
-
-1. Add the bot to your Telegram group.
-2. Add the userbot account to the same group.
-3. Grant required permissions.
-4. Start a Voice Chat.
-5. Use:
-
-```text
-/play Faded
-```
-
-or
-
-```text
-/play https://youtube.com/watch?v=...
-```
-
----
-
-## 🐳 Docker Deployment
-
-### Build Image
-
-```bash
-docker build -t tg-music-bot .
-```
-
-### Run Container
-
-```bash
-docker run -d \
-  --name tg-music-bot \
-  --env-file .env \
-  tg-music-bot
-```
-
----
-
-## 🖥 VPS Deployment
-
-Create:
-
-```text
-/etc/systemd/system/musicbot.service
-```
-
+### Option B: Using systemd (Recommended for Production)
+Create `/etc/systemd/system/musicbot.service`:
 ```ini
 [Unit]
-Description=Telegram Music Bot
+Description=GlissStream Telegram Music Bot
 After=network.target
 
 [Service]
 Type=simple
-User=your_user
-WorkingDirectory=/path/to/tg-music-bot
-ExecStart=/usr/bin/python3 main.py
+User=ec2-user
+WorkingDirectory=/home/ec2-user/tg-music-bot
+ExecStart=/home/ec2-user/tg-music-bot/.venv/bin/python3 main.py
 Restart=on-failure
 RestartSec=10
+Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=multi-user.target
 ```
-
-Enable Service:
-
+Enable and start the service:
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable musicbot
 sudo systemctl start musicbot
 ```
 
-View Status:
-
-```bash
-sudo systemctl status musicbot
-```
-
-View Logs:
-
-```bash
-journalctl -u musicbot -f
-```
-
 ---
 
-## 🏗 Architecture
+## ⚙️ How It Works (Architecture)
 
-```text
-User
- │
- ▼
-Telegram Bot (Pyrogram)
- │
- ▼
-yt-dlp
- │
- ▼
-Queue Manager
- │
- ▼
-Stream Manager
- │
- ▼
-PyTgCalls
- │
- ▼
-Telegram Voice Chat
+```
+User sends /play ──→ Bot (Pyrogram) ──→ yt-dlp Metadata Extraction
+                                                     │
+                                                     ▼
+                                               QueueManager
+                                                     │
+                                                     ▼
+                                          StreamManager (PyTgCalls)
+                                                     │
+                                                     ▼
+                                          Userbot joins VC & streams
+                                          via direct HTTP video/audio pipe
 ```
 
 ---
 
-## 🔧 Troubleshooting
+## 💡 Troubleshooting
 
-| Issue | Solution |
-|--------|----------|
-| No module named pytgcalls | Install `py-tgcalls[pyrogram]` |
-| FFmpeg not found | Install FFmpeg and add it to PATH |
-| Userbot cannot join VC | Add userbot and grant permissions |
-| FloodWait errors | Wait for Telegram cooldown |
-| Invalid SESSION_STRING | Generate a new session string |
+*   **`No module named 'pytgcalls'`**: Install the library with Pyrogram bindings using `pip install py-tgcalls[pyrogram]`.
+*   **Silence / Playback Fails**: Ensure `ffmpeg` and `ffprobe` are installed and in your environment variables.
+*   **Userbot Won't Join Voice Chat**: Ensure that the userbot account is a member of the group and has the permission to "Post voice messages" or join the call.
+*   **YouTube Throttling / 403**: The bot uses a Proof-of-Origin token provider. Keep the token provider server running (handled automatically on startup).
 
 ---
 
-## 🤝 Contributing
+## 📜 License & Acknowledgments
 
-Contributions are welcome.
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push your branch
-5. Open a Pull Request
-
----
-
-## 🙏 Credits
-
-* Pyrogram
-* PyTgCalls
-* yt-dlp
-* FFmpeg
-
----
-
-## 📄 License
-
-Licensed under the MIT License.
-
----
-
-<p align="center">
-Made with ❤️ for Telegram Voice Chats
-</p>
+This project is licensed under the **MIT License**.
+Special thanks to the [PyTgCalls](https://github.com/Laky-64/PyTgCalls) and [yt-dlp](https://github.com/yt-dlp/yt-dlp) communities for making VC streaming possible.
